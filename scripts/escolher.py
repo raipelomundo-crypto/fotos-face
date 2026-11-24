@@ -16,6 +16,16 @@ LEG = [
 ]
 exts = (".jpg", ".jpeg", ".png", ".heic", ".webp")
 na_pasta = sorted(f for f in os.listdir(pasta) if f.lower().endswith(exts) and not f.startswith("."))
+# Só fotos com boa qualidade: lado menor com pelo menos 600 px
+MIN_LADO = 600
+def boa(f):
+    try:
+        from PIL import Image
+        return min(Image.open(os.path.join(pasta, f)).size) >= MIN_LADO
+    except Exception:
+        return True
+baixa = [f for f in na_pasta if not boa(f)]
+na_pasta = [f for f in na_pasta if f not in baixa]
 novas = [f for f in na_pasta if f not in c["fotos"]]
 hist = c["historico"]
 def dias(h): return abs((hoje - dt.date.fromisoformat(h["data"])).days)
@@ -28,7 +38,7 @@ def ok_lugar(f):
 cand = [f for f in na_pasta if f in c["fotos"] and ok_lugar(f)]
 nunca = [f for f in cand if f not in ja_postadas]
 fora30 = [f for f in cand if f not in fotos_30]
-out = {"novas_sem_catalogo": novas}
+out = {"novas_sem_catalogo": novas, "ignoradas_baixa_qualidade": len(baixa)}
 if nunca: pool, out["status"] = nunca, "ok"
 elif fora30: pool, out["status"] = fora30, "precisa_autorizacao"
 else:
