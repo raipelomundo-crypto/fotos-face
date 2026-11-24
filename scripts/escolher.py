@@ -1,5 +1,6 @@
-"""Escolhe a foto do dia e a legenda.
-Uso: python3 escolher.py CONTROLE.json PASTA_FOTOS DATA(YYYY-MM-DD)
+"""Escolhe a foto e a legenda para uma DATA de postagem (pode ser futura).
+Uso: python3 escolher.py CONTROLE.json PASTA_FOTOS DATA_DO_POST(YYYY-MM-DD)
+Considera todo o "historico" (posts já agendados ou publicados, cada um com a data do post).
 Imprime JSON: {"foto":..., "legenda":..., "status": "ok"|"precisa_autorizacao"|"sem_fotos", ...}
 Não altera nada; o histórico é gravado depois que o post é criado."""
 import json, os, random, sys, datetime as dt
@@ -17,8 +18,8 @@ exts = (".jpg", ".jpeg", ".png", ".heic", ".webp")
 na_pasta = sorted(f for f in os.listdir(pasta) if f.lower().endswith(exts) and not f.startswith("."))
 novas = [f for f in na_pasta if f not in c["fotos"]]
 hist = c["historico"]
-def dias(h): return (hoje - dt.date.fromisoformat(h["data"])).days
-recentes = [h for h in hist if dias(h) < R["sem_lugar_parecido_dias"] + 1]
+def dias(h): return abs((hoje - dt.date.fromisoformat(h["data"])).days)
+recentes = [h for h in hist if dias(h) <= R["sem_lugar_parecido_dias"]]
 lug_bloq = {h["lugar"] for h in recentes}; pais_bloq = {h["pais"] for h in recentes}
 fotos_30 = {h["foto"] for h in hist if dias(h) < R["sem_repetir_foto_dias"]}
 ja_postadas = {h["foto"] for h in hist}
@@ -33,8 +34,8 @@ elif fora30: pool, out["status"] = fora30, "precisa_autorizacao"
 else:
     out["status"] = "sem_fotos"; print(json.dumps(out, ensure_ascii=False, indent=1)); sys.exit()
 foto = random.choice(pool); m = c["fotos"][foto]
-ult_leg = hist[-1]["legenda_idx"] if hist else None
-opc = [i for i in range(5) if i != ult_leg and (i != 4 or m.get("cidade_para_dica"))]
+viz = {h["legenda_idx"] for h in hist if dias(h) == 1}
+opc = [i for i in range(5) if i not in viz and (i != 4 or m.get("cidade_para_dica"))]
 i = random.choice(opc)
 out.update(foto=foto, lugar=m["lugar"], pais=m["pais"], legenda_idx=i, legenda=LEG[i].format(pais=m.get("pais_dica", m["pais"])))
 print(json.dumps(out, ensure_ascii=False, indent=1))
