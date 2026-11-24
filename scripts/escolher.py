@@ -37,5 +37,8 @@ foto = random.choice(pool); m = c["fotos"][foto]
 viz = {h["legenda_idx"] for h in hist if dias(h) == 1}
 opc = [i for i in range(5) if i not in viz and (i != 4 or m.get("cidade_para_dica"))]
 i = random.choice(opc)
+ontem_completa = any(h.get("legenda_completa") for h in hist if (hoje - dt.date.fromisoformat(h["data"])).days == 1)
+completa = bool(m.get("local_confirmado")) and not ontem_completa
+out["legenda_completa"] = completa  # True: escrever legenda completa com dicas/curiosidades (ver instruções da tarefa)
 out.update(foto=foto, lugar=m["lugar"], pais=m["pais"], legenda_idx=i, legenda=LEG[i].format(pais=m.get("pais_dica", m["pais"])))
 print(json.dumps(out, ensure_ascii=False, indent=1))
